@@ -1,103 +1,101 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>QR Scanner</title>
+<title>QR Scanner Validation</title>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-body {
-  font-family: Arial;
-  text-align: center;
+body{
+    font-family: arial;
+    text-align: center;
 }
-#reader {
-  width: 350px;
-  margin: auto;
-}
-#result {
-  padding: 15px;
-  font-size: 22px;
+#result{
+    font-size:24px;
+    margin-top:20px;
+    font-weight:bold;
 }
 </style>
 </head>
 
 <body>
-<h2>Guest QR Verification</h2>
 
-<input type="file" id="csvFile" accept=".csv">
-<br><br>
+<h2>QR Scanner Validation</h2>
 
-<div id="reader"></div>
+<div id="reader" style="width:300px;margin:auto;"></div>
+
 <div id="result"></div>
 
 <script>
+const CSV_URL =
+ "https://raw.githubusercontent.com/Akanchha-96/qr-scanner-web/refs/heads/main/guests.csv";
+
 let guestList = {};
 let scanned = new Set();
 
-document.getElementById('csvFile').addEventListener('change', function(e){
-    let file = e.target.files[0];
-    let reader = new FileReader();
+// ---------------- FETCH CSV --------------------
+fetch(CSV_URL)
+.then(res => res.text())
+.then(csvData => {
+    let lines = csvData.split('\n');
 
-    reader.onload = function(){
-        let lines = reader.result.split('\n');
+    for(let i=1; i < lines.length; i++){
+        let row = lines[i].trim();
+        if(!row) continue;
 
-        // skip header
-        for(let i=1; i < lines.length; i++){
-            let row = lines[i].trim();
-            if(row){
-                let parts = row.split(',');
-                let name = parts[0];
-                let role = parts[1];
-                let id   = parts[2];
+        let parts = row.split(',');
+        let name = parts[0];
+        let role = parts[1];
+        let id   = parts[2];
 
-                guestList[id] = {name, role};
-            }
-        }
-
-        alert("CSV loaded successfully!");
-    };
-
-    reader.readAsText(file);
-});
-
-
-function processQR(qr){
-    let id = null;
-
-    qr.split('\n').forEach(line=>{
-        if (line.startsWith("ID:")) {
-            id = line.split("ID:")[1].trim();
-        }
-    });
-
-    if(!id){
-        return "Invalid QR Code format!";
+        guestList[id] = {name, role};
     }
 
-    // check exist
-    if(!guestList[id]) return "Permission Denied: Guest Not Found!";
+    startScanner();
+});
 
-    // check scanned
-    if(scanned.has(id)) return "Already Scanned!";
+// --------------- QR Scanner ---------------------
+function startScanner(){
+
+    function onScanSuccess(qr){
+        let result = validate(qr);
+        document.getElementById("result").innerHTML = result;
+    }
+
+    let scanner = new Html5QrcodeScanner(
+        "reader", 
+        { fps: 10, qrbox: 250 }
+    );
+
+    scanner.render(onScanSuccess);
+}
+
+// ---------------- VALIDATION --------------------
+function validate(text){
+
+    let id = extractID(text);
+
+    if(!id) return "Invalid QR format";
+
+    if(!guestList[id]) return "Guest Not Found ❌";
+
+    if(scanned.has(id)) return "Already Scanned ⛔";
 
     scanned.add(id);
-    let g = guestList[id];
-    return "Permission Granted ✓<br>" + g.name + " ("+g.role+")";
+    return "Allowed ✔";
 }
 
-
-function onScanSuccess(decodedText){
-    let msg = processQR(decodedText);
-    document.getElementById("result").innerHTML = msg;
+// ------------ EXTRACT ID -----------------------
+function extractID(text){
+    let lines = text.split('\n');
+    for(let line of lines){
+        if(line.startsWith("ID:")){
+            return line.split("ID:")[1].trim();
+        }
+    }
+    return null;
 }
-
-
-let html5QrCode = new Html5Qrcode("reader");
-html5QrCode.start(
-    { facingMode: "environment" },
-    { fps: 10, qrbox: 250 },
-    onScanSuccess
-);
 </script>
+
 </body>
 </html>
