@@ -1,58 +1,103 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>QR Guest Scanner</title>
-  <script src="https://unpkg.com/html5-qrcode@2.3.7/minified/html5-qrcode.min.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 10px; }
-    #reader { width: 300px; margin: auto; }
-    #result { margin-top: 20px; font-size: 1.2em; }
-  </style>
+<title>QR Scanner</title>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<style>
+body {
+  font-family: Arial;
+  text-align: center;
+}
+#reader {
+  width: 350px;
+  margin: auto;
+}
+#result {
+  padding: 15px;
+  font-size: 22px;
+}
+</style>
 </head>
+
 <body>
-  <h2>QR Guest Scanner</h2>
-  <div id="reader"></div>
-  <div id="result">Scan a QR code</div>
+<h2>Guest QR Verification</h2>
 
-  <script>
-    // Example guest IDs (you can add more)
-    const guestIDs = new Set(["101", "102", "103", "104"]);
+<input type="file" id="csvFile" accept=".csv">
+<br><br>
 
-    const scannedIDs = new Set();
+<div id="reader"></div>
+<div id="result"></div>
 
-    function checkGuest(qrText) {
-      // Parse QR text, find line starting with "ID:"
-      const lines = qrText.split('\n');
-      let userID = null;
-      for (const line of lines) {
-        if (line.startsWith("ID:")) {
-          userID = line.slice(3).trim();
-          break;
+<script>
+let guestList = {};
+let scanned = new Set();
+
+document.getElementById('csvFile').addEventListener('change', function(e){
+    let file = e.target.files[0];
+    let reader = new FileReader();
+
+    reader.onload = function(){
+        let lines = reader.result.split('\n');
+
+        // skip header
+        for(let i=1; i < lines.length; i++){
+            let row = lines[i].trim();
+            if(row){
+                let parts = row.split(',');
+                let name = parts[0];
+                let role = parts[1];
+                let id   = parts[2];
+
+                guestList[id] = {name, role};
+            }
         }
-      }
-      if (!userID) return "Invalid QR Code";
 
-      if (!guestIDs.has(userID)) return "Permission Denied";
+        alert("CSV loaded successfully!");
+    };
 
-      if (scannedIDs.has(userID)) return "Already scanned";
+    reader.readAsText(file);
+});
 
-      scannedIDs.add(userID);
-      return "Permission Granted!";
+
+function processQR(qr){
+    let id = null;
+
+    qr.split('\n').forEach(line=>{
+        if (line.startsWith("ID:")) {
+            id = line.split("ID:")[1].trim();
+        }
+    });
+
+    if(!id){
+        return "Invalid QR Code format!";
     }
 
-    function onScanSuccess(decodedText, decodedResult) {
-      const message = checkGuest(decodedText);
-      document.getElementById('result').innerText = message;
-    }
+    // check exist
+    if(!guestList[id]) return "Permission Denied: Guest Not Found!";
 
-    function onScanFailure(error) {
-      // Handle scan failure if needed
-    }
+    // check scanned
+    if(scanned.has(id)) return "Already Scanned!";
 
-    let html5QrcodeScanner = new Html5QrcodeScanner(
-      "reader", { fps: 10, qrbox: 250 });
+    scanned.add(id);
+    let g = guestList[id];
+    return "Permission Granted ✓<br>" + g.name + " ("+g.role+")";
+}
 
-    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-  </script>
+
+function onScanSuccess(decodedText){
+    let msg = processQR(decodedText);
+    document.getElementById("result").innerHTML = msg;
+}
+
+
+let html5QrCode = new Html5Qrcode("reader");
+html5QrCode.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    onScanSuccess
+);
+</script>
 </body>
 </html>
