@@ -1,34 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>QR Scanner Validation</title>
+<meta charset="UTF-8" />
+<title>Event QR Validation</title>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
-<style>
-body{
-    font-family: arial;
-    text-align: center;
-}
-#result{
-    font-size:24px;
-    margin-top:20px;
-    font-weight:bold;
-}
-</style>
+<script src="https://cdn.tailwindcss.com"></script>
+
 </head>
+<body class="bg-gradient-to-br from-indigo-600 to-purple-700 min-h-screen flex items-center justify-center p-4">
 
-<body>
+<div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-lg text-center">
 
-<h2>QR Scanner Validation</h2>
+    <h1 class="text-3xl font-bold text-purple-700 mb-4">
+        The Endless Journey - Entry Validation
+    </h1>
 
-<div id="reader" style="width:300px;margin:auto;"></div>
+    <p class="text-gray-600 mb-6">
+        Scan Guest QR to validate entrance
+    </p>
 
-<div id="result"></div>
+    <div id="reader" class="mb-6 border rounded-lg overflow-hidden"></div>
+
+    <div id="result" class="text-xl font-semibold"></div>
+
+</div>
 
 <script>
 const CSV_URL =
- "https://raw.githubusercontent.com/Akanchha-96/qr-scanner-web/refs/heads/main/guests.csv";
+ "https://raw.githubusercontent.com/<USERNAME>/<REPO>/main/guests.csv";
 
 let guestList = {};
 let scanned = new Set();
@@ -58,8 +59,19 @@ fetch(CSV_URL)
 function startScanner(){
 
     function onScanSuccess(qr){
-        let result = validate(qr);
-        document.getElementById("result").innerHTML = result;
+        let resultText = validate(qr);
+
+        let el = document.getElementById("result");
+
+        if(resultText.includes("Allowed")){
+            el.innerHTML = `<span class="text-green-600">${resultText}</span>`;
+        }
+        else if(resultText.includes("Already")){
+            el.innerHTML = `<span class="text-yellow-500">${resultText}</span>`;
+        }
+        else{
+            el.innerHTML = `<span class="text-red-600">${resultText}</span>`;
+        }
     }
 
     let scanner = new Html5QrcodeScanner(
