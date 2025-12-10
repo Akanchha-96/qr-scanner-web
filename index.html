@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>QR Guest Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode@2.3.7/minified/html5-qrcode.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 10px; }
+    #reader { width: 300px; margin: auto; }
+    #result { margin-top: 20px; font-size: 1.2em; }
+  </style>
+</head>
+<body>
+  <h2>QR Guest Scanner</h2>
+  <div id="reader"></div>
+  <div id="result">Scan a QR code</div>
+
+  <script>
+    // Example guest IDs (you can add more)
+    const guestIDs = new Set(["101", "102", "103", "104"]);
+
+    const scannedIDs = new Set();
+
+    function checkGuest(qrText) {
+      // Parse QR text, find line starting with "ID:"
+      const lines = qrText.split('\n');
+      let userID = null;
+      for (const line of lines) {
+        if (line.startsWith("ID:")) {
+          userID = line.slice(3).trim();
+          break;
+        }
+      }
+      if (!userID) return "Invalid QR Code";
+
+      if (!guestIDs.has(userID)) return "Permission Denied";
+
+      if (scannedIDs.has(userID)) return "Already scanned";
+
+      scannedIDs.add(userID);
+      return "Permission Granted!";
+    }
+
+    function onScanSuccess(decodedText, decodedResult) {
+      const message = checkGuest(decodedText);
+      document.getElementById('result').innerText = message;
+    }
+
+    function onScanFailure(error) {
+      // Handle scan failure if needed
+    }
+
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+      "reader", { fps: 10, qrbox: 250 });
+
+    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+  </script>
+</body>
+</html>
