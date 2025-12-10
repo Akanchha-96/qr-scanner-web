@@ -7,18 +7,6 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 
-<style>
-/* Fade animation */
-.fade-in {
-    animation: fadeIn 0.4s ease-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: scale(0.9); }
-    to { opacity: 1; transform: scale(1); }
-}
-</style>
-
 </head>
 
 <body class="bg-gradient-to-br from-indigo-600 to-purple-700 min-h-screen flex items-center justify-center p-4">
@@ -34,16 +22,13 @@
     </p>
 
     <div id="reader" class="mb-6 border rounded-lg overflow-hidden"></div>
-
-    <div id="result" class="text-xl font-semibold"></div>
-
 </div>
 
 <!-- ALERT POPUP -->
-<div id="alertBox" class="hidden fixed top-0 left-0 w-full h-full 
-    bg-black/50 flex items-center justify-center p-4">
-    <div id="alertContent" class="bg-white rounded-xl p-6 text-center shadow-2xl fade-in">
+<div id="alertBox" class="hidden fixed top-0 left-0 w-full h-full bg-black/50 flex items-center justify-center p-4">
+    <div id="alertContent" class="bg-white rounded-xl p-6 text-center shadow-2xl">
         <h2 id="alertMessage" class="text-2xl font-bold mb-4"></h2>
+
         <button onclick="closeAlert()"
             class="bg-purple-600 text-white px-6 py-2 rounded-lg shadow">
             OK
@@ -57,6 +42,7 @@ const CSV_URL =
 
 let guestList = {};
 let scanned = new Set();
+let scanner;
 
 // ---------------- FETCH CSV --------------------
 fetch(CSV_URL)
@@ -79,29 +65,35 @@ fetch(CSV_URL)
     startScanner();
 });
 
-// --------------- ALERT POPUP ---------------------
+// ---------------- ALERT POPUP --------------------
 function showAlert(message, color="text-black") {
-    let alertBox = document.getElementById("alertBox");
     let alertMsg = document.getElementById("alertMessage");
 
     alertMsg.innerText = message;
     alertMsg.className = "text-2xl font-bold mb-4 " + color;
 
-    alertBox.classList.remove("hidden");
+    document.getElementById("alertBox").classList.remove("hidden");
 }
 
 function closeAlert() {
     document.getElementById("alertBox").classList.add("hidden");
+
+    // Restart scanner AFTER closing alert
+    document.getElementById("reader").innerHTML = "";
+    startScanner();
 }
 
-// --------------- QR SCANNER ---------------------
+// ---------------- QR SCANNER ---------------------
 function startScanner(){
 
     function onScanSuccess(qr){
+        // stop scanning immediately
+        scanner.clear();
+
         validate(qr);
     }
 
-    let scanner = new Html5QrcodeScanner(
+    scanner = new Html5QrcodeScanner(
         "reader", 
         { fps: 10, qrbox: 250 }
     );
