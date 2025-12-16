@@ -121,8 +121,11 @@ function validate(text){
         return;
     }
 
-    scanned.add(id);
-    showAlert("✔ Allowed", "text-green-600");
+    let guest = guestList[id];
+    showAlert(
+        `✔ Welcome ${guest.name}`,
+        "text-green-600"
+    );
 }
 
 // ------------ EXTRACT ID -----------------------
