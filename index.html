@@ -121,11 +121,13 @@ function validate(text){
         return;
     }
 
+    scanned.add(id);
     let guest = guestList[id];
     showAlert(
         `✔ Welcome ${guest.name}`,
         "text-green-600"
     );
+
 }
 
 // ------------ EXTRACT ID -----------------------
